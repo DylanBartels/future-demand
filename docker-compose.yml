@@ -1,0 +1,38 @@
+version: "3.9"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://dev:dev_pass@postgres/test"
+    ports:
+      - "3000:3000"
+
+  scraper:
+    build:
+      context: .
+      dockerfile: docker/scraper/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://dev:dev_pass@postgres/test"
+
+  postgres:
+    image: postgres:14
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=dev
+      - POSTGRES_PASSWORD=dev_pass
+      - POSTGRES_DB=test
+    healthcheck:
+      test: pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER} || exit 1
+      interval: 5s
+      timeout: 2s
+      retries: 60
+      start_period: 2s
